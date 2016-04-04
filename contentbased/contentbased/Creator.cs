@@ -56,14 +56,14 @@ namespace contentbased
             SqlCommand cmd = new SqlCommand();
             SqlDataReader reader;
             string author = null;
-            string genre = null;
+            string publisher = null;
             string year = null;
             List<User> userlist = new List<User>();
             int userID = 0;
             int prevID = -1;
             User newUser = null;
 
-            cmd.CommandText = "select users.[User-ID], ratings.isbn, ratings.[book-rating], [book-author], [year-of-publication], genre FROM users join ratings on users.[User-ID] = ratings.[User-ID] join books on ratings.[ISBN] = books.ISBN ORDER BY cast(users.[user-id] as int) asc";
+            cmd.CommandText = "select users.[User-ID], ratings.isbn, ratings.[book-rating], [book-author], [year-of-publication], [publisher] FROM users join ratings on users.[User-ID] = ratings.[User-ID] join books on ratings.[ISBN] = books.ISBN ORDER BY cast(users.[user-id] as int) asc";
             cmd.CommandType = System.Data.CommandType.Text;
             cmd.Connection = connection;
 
@@ -82,11 +82,11 @@ namespace contentbased
                     }
                     author = reader.GetString(3);
                     year = reader.GetString(4);
-                    genre = reader.GetString(5);
-                    Console.WriteLine(author + " " + year + " " + genre + " " + userID);
+                    publisher = reader.GetString(5);
+                    //Console.WriteLine(author + " " + year + " " + publisher + " " + userID);
                     
                     newUser.buildAuthorList(author);
-                    newUser.buildGenreList(genre);
+                    newUser.buildPublisherList(publisher);
                     newUser.buildYearList(year);
                     prevID = userID;
                 }
@@ -99,6 +99,49 @@ namespace contentbased
            
 
             return userlist;
+        }
+
+        public List<Book> createBookProfiles(SqlConnection connection)
+        {
+            SqlCommand cmd = new SqlCommand();
+            SqlDataReader reader;
+            string isbn = null;
+            string genre = null;
+            string author = null;
+            string publisher = null;
+            string year = null;
+            List<Book> bookList = new List<Book>();
+            Book newBook = null;
+
+            cmd.CommandText = "select * from Books";
+            cmd.CommandType = System.Data.CommandType.Text;
+            cmd.Connection = connection;
+
+            connection.Open();
+            reader = cmd.ExecuteReader();
+
+            if (reader.HasRows)
+            {
+                while (reader.Read())
+                {
+                    isbn = reader.GetString(0);
+                    author = reader.GetString(2);
+                    year = reader.GetString(3);
+                    publisher = reader.GetString(4);
+                    genre = reader.GetString(5);
+
+                    newBook = new Book(isbn, author, genre, year, publisher);
+                    bookList.Add(newBook);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No rows found.");
+            }
+            connection.Close();
+
+
+            return bookList;
         }
     }
 }

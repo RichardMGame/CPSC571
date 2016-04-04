@@ -14,6 +14,8 @@ namespace contentbased
             SqlConnection myConnection = new SqlConnection("Server=localhost;Database=books;Integrated Security=true");
             Creator creator = new Creator();
             List<User> users = new List<User>();
+            List<Book> books = new List<Book>();
+
             try
             {
                 Console.WriteLine("Connecting to Database...\n");
@@ -33,6 +35,8 @@ namespace contentbased
 
             users = creator.createUserProfiles(myConnection);
             users.ElementAt(1).printUserProfile();
+            books = creator.createBookProfiles(myConnection);
+            books.ElementAt(1).printBookProfile();
             Console.ReadLine();
         }
     }

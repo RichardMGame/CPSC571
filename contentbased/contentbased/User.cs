@@ -12,6 +12,7 @@ namespace contentbased
         private List<String> authors;
         private List<String> genres;
         private List<String> years;
+        private List<String> publishers;
 
         // constructor
         public User(int userID)
@@ -20,6 +21,7 @@ namespace contentbased
             this.authors = new List<String>();
             this.genres = new List<String>();
             this.years = new List<String>();
+            this.publishers = new List<String>();
         }
 
         public int getID()
@@ -35,9 +37,9 @@ namespace contentbased
             {
                 Console.WriteLine("Author: " + s);
             }
-            foreach (String s in genres)
+            foreach (String s in publishers)
             {
-                Console.WriteLine("Genre: " + s);
+                Console.WriteLine("Publisher: " + s);
             }
             foreach (String s in years)
             {
@@ -64,9 +66,9 @@ namespace contentbased
         }
 
         // builds a list of years that the user has bought books from
-        public void buildPublisherList()
+        public void buildPublisherList(String publisher)
         {
-
+            publishers.Add(publisher);
         }
     }
 }
