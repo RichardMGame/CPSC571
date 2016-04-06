@@ -1,43 +1,41 @@
-﻿/*
-Original Code can be found here: http://www.cnblogs.com/kuber/articles/SlopeOne_CSharp.html
-
-Author is Kuberski
-
-Modified to fits purposes of the assignment
-*/
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CPSC571
 {
     public class Rating
     {
-        public float Value { get; set; }
+        public int Value { get; set; }
         public int Freq { get; set; }
 
-        public float AverageValue
+        public int AverageValue
         {
-            get { return Value / Freq; }
+            get {
+                if (Freq != 0)
+                {
+                    return Value / Freq;
+                }
+                else
+                    return 0;
+            }
         }
     }
 
     public class RatingDifferenceCollection : Dictionary<string, Rating>
     {
-        private string GetKey(int Item1Id, int Item2Id)
+        private string GetKey(long Item1Id, long Item2Id)
         {
             return (Item1Id < Item2Id) ? Item1Id + "/" + Item2Id : Item2Id + "/" + Item1Id;
         }
 
-        public bool Contains(int Item1Id, int Item2Id)
+        public bool Contains(long Item1Id, long Item2Id)
         {
             return this.Keys.Contains<string>(GetKey(Item1Id, Item2Id));
         }
 
-        public Rating this[int Item1Id, int Item2Id]
+        public Rating this[long Item1Id, long Item2Id]
         {
             get
             {
@@ -50,21 +48,21 @@ namespace CPSC571
     public class SlopeOne
     {
         public RatingDifferenceCollection _DiffMarix = new RatingDifferenceCollection();  // The dictionary to keep the diff matrix
-        public HashSet<int> _Items = new HashSet<int>();  // Tracking how many items totally
+        public HashSet<long> _Items = new HashSet<long>();  // Tracking how many items totally
 
-        public void AddUserRatings(IDictionary<int, float> userRatings)
+        public void AddUserRatings(IDictionary<long, int> userRatings)
         {
             foreach (var item1 in userRatings)
             {
-                int item1Id = item1.Key;
-                float item1Rating = item1.Value;
+                long item1Id = item1.Key;
+                int item1Rating = item1.Value;
                 _Items.Add(item1.Key);
 
                 foreach (var item2 in userRatings)
                 {
                     if (item2.Key <= item1Id) continue; // Eliminate redundancy
-                    int item2Id = item2.Key;
-                    float item2Rating = item2.Value;
+                    long item2Id = item2.Key;
+                    int item2Rating = item2.Value;
 
                     Rating ratingDiff;
                     if (_DiffMarix.Contains(item1Id, item2Id))
@@ -84,7 +82,7 @@ namespace CPSC571
         }
 
         // Input ratings of all users
-        public void AddUerRatings(IList<IDictionary<int, float>> Ratings)
+        public void AddUerRatings(IList<IDictionary<long, int>> Ratings)
         {
             foreach (var userRatings in Ratings)
             {
@@ -92,9 +90,9 @@ namespace CPSC571
             }
         }
 
-        public IDictionary<int, float> Predict(IDictionary<int, float> userRatings)
+        public IDictionary<long, int> Predict(IDictionary<long, int> userRatings)
         {
-            Dictionary<int, float> Predictions = new Dictionary<int, float>();
+            Dictionary<long, int> Predictions = new Dictionary<long, int>();
             foreach (var itemId in this._Items)
             {
                 if (userRatings.Keys.Contains(itemId)) continue; // User has rated this item, just skip it
@@ -104,7 +102,7 @@ namespace CPSC571
                 foreach (var userRating in userRatings)
                 {
                     if (userRating.Key == itemId) continue;
-                    int inputItemId = userRating.Key;
+                    long inputItemId = userRating.Key;
                     if (_DiffMarix.Contains(itemId, inputItemId))
                     {
                         Rating diff = _DiffMarix[itemId, inputItemId];
@@ -112,7 +110,7 @@ namespace CPSC571
                         itemRating.Freq += diff.Freq;
                     }
                 }
-                Predictions.Add(itemId, itemRating.AverageValue);
+                Predictions.Add(itemId, (int)itemRating.AverageValue);
             }
             return Predictions;
         }
