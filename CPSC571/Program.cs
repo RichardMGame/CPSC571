@@ -37,10 +37,7 @@ namespace CPSC571
             bool first = true;
             while (myReader.Read())
             {
-                if (first)
-                    Console.WriteLine(myReader.GetString(0));
                 list.Add(myReader.GetString(0));
-                first = false;
             }
             Console.WriteLine("All users retrieved");
             myConnection.Close();
@@ -49,14 +46,14 @@ namespace CPSC571
             myCommand = null;
             string uid = null;
             // gets a list of isbn for each user
-            Console.WriteLine("Retrieving 1% of user's books");
+            Console.WriteLine("Retrieving user's books");
             Console.WriteLine("0");
             double old_current = 0;
             double current = 0;
-            for (int i = 0; i < list.Count * 0.0001; i++)
+            for (int i = 0; i < list.Count * 0.01; i++)
             {
 
-                current = (i / (list.Count * 0.0001)) * 100;
+                current = (i / (list.Count * 0.01)) * 100;
                 //Console.WriteLine(current);
                 if (old_current < current)
                 {
@@ -105,54 +102,56 @@ namespace CPSC571
             Console.WriteLine("Building CF algorithm table");
 
             SlopeOne so = new SlopeOne();
-
-            int count = 0;
-            var list4 = new List<Dictionary<long, int>>();
+            //so.Test();
+            //int count = 0;
+            var list4 = new List<Dictionary<long, float>>();
             foreach (var users in list3)
             {
                 UserBook ub = users;
-                Dictionary<long, int> userRating = new Dictionary<long, int>();
+                Dictionary<long, float> userRating = new Dictionary<long, float>();
                 foreach (Books book in ub.books)
                 {
-                    try {
-                        userRating.Add(book.isbn, book.rating);
+                    try
+                    {
+                        userRating.Add(book.Isbn, ((float)book.Rating));
                     }
                     catch (ArgumentException)
                     {
-                        Console.WriteLine("Unable to enter in rating");
+                        // Console.WriteLine("Unable to enter in rating");
                     }
                 }
-                list4.Add(userRating);  
+                list4.Add(userRating);
                 so.AddUserRatings(userRating);
 
-                count++;
             }
 
             Console.WriteLine("CF algorithm table built");
-            Console.WriteLine("Enter the UID of the user to recommend books");
-            String s = Console.ReadLine();
-            count = 0;
-            foreach (var urgh in list3)
+
+
+            for (int i = 0; i < list4.Count; i++)
             {
-                if (urgh.uid.Equals(s)){
-                    break;
+
+                Dictionary<long, float> user = list4[i];
+
+                IDictionary<long, float> Predictions = so.Predict(user);
+
+
+                int count = 0;
+                foreach (var rating in Predictions)
+                {
+
+                    if (!float.IsNaN(rating.Value))
+                    {
+                        Console.WriteLine("User: " + list3[i].uid + " Book: " + rating.Key + " Rating: " + rating.Value);
+                        Console.WriteLine("#############################################################################");
+                        count++;
+                        if (count > 10) break;
+                    }
+
+                    
                 }
-                count++;
-            }
 
-            Dictionary<long, int> user = list4[count];
 
-            IDictionary<long, int> Predictions = so.Predict(user);
-
-            count = 10;
-            foreach (var rating in Predictions)
-            {
-                if (count > 10)
-                    break;
-
-                Console.WriteLine("Book: " + rating.Key + " Rating: " + rating.Value);
-
-                count++;
             }
             Console.WriteLine("Press any key to terminate program");
             Console.ReadKey();

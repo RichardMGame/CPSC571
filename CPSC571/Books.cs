@@ -8,14 +8,28 @@ namespace CPSC571
 {
     class Books
     {
-        public long isbn { get; set; }
-        public int rating { get; set; }
-
-        public Books(long isbn, int rating)
+        private long _isbn;
+        public long Isbn
         {
-            this.isbn = isbn;
-            this.rating = rating;
+            get
+            {
+                return this._isbn;
+            }
+        }
+        private int _rating;
+        public int Rating
+        {
+            get
+            {
+                return this._rating;
+            }
         }
 
-    }
+            public Books(long isbn, int rating)
+        {
+            this._isbn = isbn;
+            this._rating = rating;
+        }
+
+}
 }
