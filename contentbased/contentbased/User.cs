@@ -9,13 +9,14 @@ namespace contentbased
     class User
     {
         public int id;
-        private List<String> authors;
+        private List<Tuple<String, double>> authors;
 
-        public List<String> Authors
+        public List<Tuple<String, double>> Authors
         {
             get { return authors; }
             set { authors = value; }
         }
+
         private List<String> genres;
 
         public List<String> Genres
@@ -50,7 +51,7 @@ namespace contentbased
         public User(int userID)
         {
             this.id = userID;
-            this.authors = new List<String>();
+            this.authors = new List<Tuple<String,double>>();
             this.genres = new List<String>();
             this.years = new List<String>();
             this.publishers = new List<String>();
@@ -67,9 +68,9 @@ namespace contentbased
         {
             Console.WriteLine("USERID: " + this.id);
             Console.WriteLine("-------------------");
-            foreach (String s in authors)
+            foreach (Tuple<String,double> s in authors)
             {
-                Console.WriteLine("Author: " + s);
+                Console.WriteLine("Author: " + s.Item1);
             }
             foreach (String s in publishers)
             {
@@ -82,7 +83,7 @@ namespace contentbased
         }
 
         // builds a list of authors that the user has bought books from
-        public void buildAuthorList(String author)
+        public void buildAuthorList(Tuple<String,double> author)
         {
             authors.Add(author);
         }
@@ -121,11 +122,23 @@ namespace contentbased
             suggestedBooks.Sort((x, y) => y.Value.CompareTo(x.Value));
         }
 
-        public void printTopSuggestions()
+        public void trimSuggestionList()
         {
-            for (int i = 0; i < 10; i++)
+            suggestedBooks.RemoveRange(50, suggestedBooks.Count - 50);
+        }
+        // prints the top n suggestions
+        public void printTopSuggestions(int n)
+        {
+            Console.WriteLine("USER#          : " + id);
+            Console.WriteLine("Suggested Books: " + suggestedBooks.Count());
+            Console.WriteLine("Bought Books   : " + Authors.Count());
+            for (int i = 0; i < n; i++)
             {
-                Console.WriteLine(suggestedBooks.ElementAt(i).Key.ISBN + " " + suggestedBooks.ElementAt(i).Value);
+                Console.WriteLine("----------------------------------------------------------------");
+                Console.WriteLine("Author           : " + suggestedBooks.ElementAt(i).Key.Author + 
+                    "\nTitle            : " + suggestedBooks.ElementAt(i).Key.Bookname + 
+                    "\nSimilarity Rating: " + suggestedBooks.ElementAt(i).Value +
+                    "\nISBN             : " + suggestedBooks.ElementAt(i).Key.ISBN);
             }
         }
     }

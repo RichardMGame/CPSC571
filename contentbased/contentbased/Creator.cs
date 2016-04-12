@@ -42,11 +42,9 @@ namespace contentbased
             }
 
             connection.Close();
-            //List<User> SortedUsers = userlist.OrderBy(o => o.id).ToList();
             foreach(User u in userlist)
                 Console.WriteLine(u.id);
             return userlist;
-            //return SortedUsers;
         }
 
         public List<User> createUserProfiles(SqlConnection connection)
@@ -60,7 +58,7 @@ namespace contentbased
             int userID = 0;
             int prevID = -1;
             User newUser = null;
-
+            double rating = 5;
             cmd.CommandText = "select users.[User-ID], ratings.isbn, ratings.[book-rating], [book-author], [year-of-publication], [publisher] FROM users join ratings on users.[User-ID] = ratings.[User-ID] join books on ratings.[ISBN] = books.ISBN ORDER BY cast(users.[user-id] as int) asc";
             cmd.CommandType = System.Data.CommandType.Text;
             cmd.Connection = connection;
@@ -81,9 +79,10 @@ namespace contentbased
                     author = reader.GetString(3);
                     year = reader.GetString(4);
                     publisher = reader.GetString(5);
-                    //Console.WriteLine(author + " " + year + " " + publisher + " " + userID);
-                    
-                    newUser.buildAuthorList(author);
+                    Double.TryParse(reader.GetString(2), out rating);
+                    rating = getRatingFactor(rating);
+                    Tuple<String, double> authorRating = new Tuple<String, double>(author, rating);
+                    newUser.buildAuthorList(authorRating);
                     newUser.buildPublisherList(publisher);
                     newUser.buildYearList(year);
                     prevID = userID;
@@ -91,7 +90,7 @@ namespace contentbased
             }
             else
             {
-                Console.WriteLine("No rows found.");
+                Console.WriteLine("User has bought no books and cannot be recommended anything.");
             }
                 connection.Close();
            
@@ -108,6 +107,7 @@ namespace contentbased
             string author = null;
             string publisher = null;
             string year = null;
+            string title = null;
             List<Book> bookList = new List<Book>();
             Book newBook = null;
 
@@ -123,12 +123,13 @@ namespace contentbased
                 while (reader.Read())
                 {
                     isbn = reader.GetString(0);
+                    title = reader.GetString(1);
                     author = reader.GetString(2);
                     year = reader.GetString(3);
                     publisher = reader.GetString(4);
                     genre = reader.GetString(5);
 
-                    newBook = new Book(isbn, author, genre, year, publisher);
+                    newBook = new Book(isbn, author, genre, year, publisher, title);
                     bookList.Add(newBook);
                 }
             }
@@ -150,6 +151,7 @@ namespace contentbased
             string publisher = null;
             string year = null;
             string isbn = null;
+            double rating = 5;
             User newUser = new User(userID);
 
             cmd.CommandText = "select users.[User-ID], ratings.isbn, ratings.[book-rating], [book-author], [year-of-publication], [publisher], books.[isbn] FROM users join ratings on users.[User-ID] = ratings.[User-ID] join books on ratings.[ISBN] = books.ISBN WHERE users.[USER-ID] = '" + userID + "' ORDER BY cast(users.[user-id] as int) asc";
@@ -168,17 +170,22 @@ namespace contentbased
                     year = reader.GetString(4);
                     publisher = reader.GetString(5);
                     isbn = reader.GetString(6);
-                    //Console.WriteLine(author + " " + year + " " + publisher + " " + userID);
+                    Double.TryParse(reader.GetString(2), out rating);
+                    rating = getRatingFactor(rating);
+                    Tuple<String,double> authorRating = new Tuple<String,double>(author,rating);
 
-                    newUser.buildAuthorList(author);
+                    newUser.buildAuthorList(authorRating);
                     newUser.buildPublisherList(publisher);
                     newUser.buildYearList(year);
                     newUser.buildOwnedBooksList(isbn);
+                    rating = 5;
                 }
             }
             else
             {
-                Console.WriteLine("No rows found.");
+                Console.WriteLine("User has bought no books and cannot be recommended anything.");
+                connection.Close();
+                return null;
             }
             connection.Close();
 
@@ -187,24 +194,26 @@ namespace contentbased
         }
 
         // create a list of books to recommend to the user using the profiles created for the user and the books
-        // this approach will be revamped a few times as I develop
-        // current version:
-        //          authors > years > publishers 
-        //          don't list a book if they own it
-        //          need to incorporate ratings (assume 0 is a rating of "5" or average, and multiply the filter value by pos/neg depending on rating)
-        //             may need to add rating to all profile values and multiply by 0.6/0.7/.../1.3/1.4...could find a better way
-        public void findUserBookMatches(SqlConnection connection, List<Book> bookList, int userID)
+        // ratings can be adjusted.
+        // As for now, author > year > publisher
+        //      author is affected by book ratings by a factor (low and high extremities are bigger factors)
+        public void findUserBookMatches(SqlConnection connection, List<Book> bookList, int userID, int numSuggestions)
         {
             User user = profileUser(connection, userID);
             double bookScore = 0;
-
+            if (user == null)
+            {
+                return;
+            }
             foreach (Book book in bookList)
             {           
-                foreach (String s in user.Authors)
+                foreach (Tuple<String,double> s in user.Authors)
                 {
-                    if (s.ToLower().Equals(book.Author))
+                    // because the author is the most important weighted part the recommendation, we apply
+                    // ratings the user has given the author to the bookScore
+                    if (s.Item1.ToLower().Equals(book.Author.ToLower()))
                     {
-                        bookScore += 5;
+                        bookScore += (5*s.Item2);
                     }
                 }
                 foreach (String s in user.Years)
@@ -216,25 +225,80 @@ namespace contentbased
                 }
                 foreach (String s in user.Publishers) 
                 {
-                    if (s.ToLower().Equals(book.Publisher))
+                    if (s.ToLower().Equals(book.Publisher.ToLower()))
                     {
                         bookScore += 0.5;
                     }
                 }
                 // if the book is already owned, we rate it 0 as the user will not want it suggested to him.
+                // this is because the dataset we are using is not properly formed
+                // we must assume the user doesn't have a strong opinion about this book either way
                 foreach (String s in user.OwnedBooks)
                 {
-                    if (s.ToLower().Equals(book.ISBN))
+                    if (s.ToLower().Equals(book.ISBN.ToLower()))
                     {
                         bookScore = 0;
                     }
                 }
-                Console.WriteLine(book.Author);
-                user.addSuggestedBook(book, bookScore);
+                if (bookScore != 0)
+                {
+                    user.addSuggestedBook(book, bookScore);
+                }
                 bookScore = 0;
             }
             user.sortSuggestedBooks();
-            user.printTopSuggestions();
+            user.printTopSuggestions(numSuggestions);
+        }
+
+        // we assume a rating of 0 is UNRATED and give it a rating factor equal to a rating of 5 (no strong opinion of the book).
+        private double getRatingFactor(double rating)
+        {
+            double ratingFactor = 0;
+            if (rating == 0)
+            {
+                ratingFactor = 1.0;
+            }
+            else if (rating == 1)
+            {
+                ratingFactor = 0.1;
+            }
+            else if (rating == 2)
+            {
+                ratingFactor = 0.3;
+            }
+            else if (rating == 3)
+            {
+                ratingFactor = 0.6;
+            }
+            else if (rating == 4)
+            {
+                ratingFactor = 0.8;
+            }
+            else if (rating == 5)
+            {
+                ratingFactor = 1.0;
+            }
+            else if (rating == 6)
+            {
+                ratingFactor = 1.25;
+            }
+            else if (rating == 7)
+            {
+                ratingFactor = 2.0;
+            }
+            else if (rating == 8)
+            {
+                ratingFactor = 2.5;
+            }
+            else if (rating == 9)
+            {
+                ratingFactor = 5.0;
+            }
+            else if (rating == 10)
+            {
+                ratingFactor = 10;
+            }
+            return ratingFactor;
         }
     }
 }

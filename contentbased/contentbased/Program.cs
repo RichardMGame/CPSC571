@@ -11,34 +11,32 @@ namespace contentbased
     {
         static void Main(string[] args)
         {
+            Console.SetWindowSize(150, 43);
             SqlConnection myConnection = new SqlConnection("Server=localhost;Database=books;Integrated Security=true");
             Creator creator = new Creator();
             List<User> users = new List<User>();
             List<Book> books = new List<Book>();
-
-            try
-            {
-                Console.WriteLine("Connecting to Database...\n");
-                myConnection.Open();
-                Console.WriteLine("Connected to Database!\n");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Cannot connect to Database.\n");
-                Console.WriteLine(e.ToString());
-            }
-
-
-
-            Console.ReadLine();
-            myConnection.Close();
-
-            //users = creator.createUserProfiles(myConnection);
-            //users.ElementAt(1).printUserProfile();
+            String input = "0";
+            String numSuggestions = "10";
+            Console.WriteLine("Retrieving books and creating book profiles...");
             books = creator.createBookProfiles(myConnection);
-            books.ElementAt(1).printBookProfile();
-            creator.findUserBookMatches(myConnection, books, 400);
-            Console.ReadLine();
+            Console.WriteLine("Book profiles created.");
+
+            while (true)
+            {
+                Console.Write("Enter USERID to find suggestions for or type q to quit: ");
+                input = Console.ReadLine();
+                Console.Write("Enter # of top suggestions to display to screen: ");
+                numSuggestions = Console.ReadLine();
+                if (input.Equals("q"))
+                {
+                    break;
+                }
+                Console.WriteLine("===============");
+                creator.findUserBookMatches(myConnection, books, Int32.Parse(input), Int32.Parse(numSuggestions));
+                Console.WriteLine("===============");
+            }
+
         }
     }
 }
