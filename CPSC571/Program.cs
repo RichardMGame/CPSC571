@@ -133,29 +133,40 @@ namespace CPSC571
 
                 Dictionary<long, float> user = list4[i];
 
-                IDictionary<long, float> Predictions = so.Predict(user);
+                IDictionary<long, float> predictions = so.Predict(user);
 
+                var items = from pair in predictions
+                            orderby pair.Value descending
+                            select pair;
 
                 int count = 0;
-                foreach (var rating in Predictions)
-                {
 
+                Console.WriteLine("User: " + list3[i].uid);
+                foreach (var rating in items)
+                {
                     if (!float.IsNaN(rating.Value))
                     {
-                        Console.WriteLine("User: " + list3[i].uid + " Book: " + rating.Key + " Rating: " + rating.Value);
-                        Console.WriteLine("#############################################################################");
+
+                        Console.WriteLine(" Book: " + rating.Key + " Rating: " + rating.Value);
+
                         count++;
                         if (count > 10) break;
                     }
 
-                    
+
+
                 }
 
+                if (count == 0)
+                {
+                    Console.WriteLine("No books to recommend");
+                }
+
+                Console.WriteLine("#############################################################################");
 
             }
             Console.WriteLine("Press any key to terminate program");
             Console.ReadKey();
-
         }
     }
 }
