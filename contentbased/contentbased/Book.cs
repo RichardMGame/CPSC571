@@ -10,9 +10,33 @@ namespace contentbased
     {
         public string ISBN;
         private string author;
+
+        public string Author
+        {
+            get { return author; }
+            set { author = value; }
+        }
         private string genre;
+
+        public string Genre
+        {
+            get { return genre; }
+            set { genre = value; }
+        }
         private string year;
+
+        public string Year
+        {
+            get { return year; }
+            set { year = value; }
+        }
         private string publisher;
+
+        public string Publisher
+        {
+            get { return publisher; }
+            set { publisher = value; }
+        }
 
         public Book(string ISBN, string author, string genre, string year, string publisher)
         {
@@ -32,6 +56,8 @@ namespace contentbased
             Console.WriteLine("Year: " + this.year);
             Console.WriteLine("Publisher: " + this.publisher);
         }
+
+
 
     }
 }

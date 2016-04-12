@@ -33,10 +33,11 @@ namespace contentbased
             Console.ReadLine();
             myConnection.Close();
 
-            users = creator.createUserProfiles(myConnection);
-            users.ElementAt(1).printUserProfile();
+            //users = creator.createUserProfiles(myConnection);
+            //users.ElementAt(1).printUserProfile();
             books = creator.createBookProfiles(myConnection);
             books.ElementAt(1).printBookProfile();
+            creator.findUserBookMatches(myConnection, books, 400);
             Console.ReadLine();
         }
     }
