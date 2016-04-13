@@ -36,9 +36,9 @@ namespace CPSC571
         {
 
             string path = System.IO.Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName;
-            Console.WriteLine(path);
 
-             SqlConnection myConnection = new SqlConnection("Server=localhost;Database=CPSC571;Integrated Security=true");
+
+            SqlConnection myConnection = new SqlConnection("Server=localhost;Database=CPSC571;Integrated Security=true");
             //list of users
             var userList = new List<string>();
             //list of users and there books
@@ -159,7 +159,7 @@ namespace CPSC571
                 userBookRatingList.Add(t);
 
             }
-
+            ClearLine();
             Console.WriteLine("100%");
 
             Console.WriteLine("All user's books retrieved");
@@ -194,13 +194,24 @@ namespace CPSC571
 
             string delimeter = ",";
             StringBuilder sb = new StringBuilder();
-            string filePath =@""+path+"\\result.cvs";
+            string filePath = @"" + path + "\\result2.cvs";
             sb.AppendLine("UID" + delimeter + "ISBN" + delimeter + "Rating");
 
             Console.WriteLine("Generating and Printing Results to file");
             for (int i = 0; i < list4.Count; i++)
             {
-
+                float zero = 0;
+                float one = 0;
+                float two = 0;
+                float three = 0;
+                float four = 0;
+                float five = 0;
+                float six = 0;
+                float seven = 0;
+                float eight = 0;
+                float nine = 0;
+                float ten = 0;
+                float nan = 0;
                 Dictionary<long, float> user = list4[i];
 
                 IDictionary<long, float> predictions = so.Predict(user);
@@ -209,19 +220,49 @@ namespace CPSC571
                             orderby pair.Value descending
                             select pair;
 
-                count = 0;
-
-                sb.AppendLine(userBookRatingList[i].uid);
                 foreach (var rating in items)
                 {
                     if (!float.IsNaN(rating.Value))
                     {
-                        //Console.WriteLine(" Book: " + rating.Key + " Rating: " + rating.Value);
-                        sb.AppendLine(" " + delimeter + rating.Key + delimeter + rating.Value + delimeter);
-                        count++;
-                        if (count > 5) break;
+
+                        if (rating.Value == 10)
+                            ten += 1;
+                        else if (rating.Value == 9)
+                            nine += 1;
+                        else if (rating.Value == 8)
+                            eight += 1;
+                        else if (rating.Value == 7)
+                            seven += 1;
+                        else if (rating.Value == 6)
+                            six += 1;
+                        else if (rating.Value == 5)
+                            five += 1;
+                        else if (rating.Value == 4)
+                            four += 1;
+                        else if (rating.Value == 3)
+                            three += 1;
+                        else if (rating.Value == 2)
+                            two += 1;
+                        else if (rating.Value == 1)
+                            one += 1;
+                        else if (rating.Value == 0)
+                            zero += 1;
                     }
+                    else
+                        nan += 1;
                 }
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "10" + delimeter + ten + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "9" + delimeter + nine + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "8" + delimeter + eight + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "7" + delimeter + seven + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "6" + delimeter + six + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "5" + delimeter + five + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "4" + delimeter + four + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "3" + delimeter + three + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "2" + delimeter + two + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "1" + delimeter + one + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "0" + delimeter + zero + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "NaN" + delimeter + nan + delimeter);
             }
             File.WriteAllText(filePath, sb.ToString());
 
