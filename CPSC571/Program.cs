@@ -195,7 +195,7 @@ namespace CPSC571
             string delimeter = ",";
             StringBuilder sb = new StringBuilder();
             string filePath = @"" + path + "\\result2.cvs";
-            sb.AppendLine("UID" + delimeter + "ISBN" + delimeter + "Rating");
+            sb.AppendLine("UID" + delimeter + "Rating#" + delimeter + "# of that Rating");
 
             Console.WriteLine("Generating and Printing Results to file");
             for (int i = 0; i < list4.Count; i++)
@@ -251,7 +251,7 @@ namespace CPSC571
                     else
                         nan += 1;
                 }
-                sb.AppendLine(userBookRatingList[i].uid + delimeter + "10" + delimeter + ten + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "10" + delimeter + ten + delimeter + user.Count);
                 sb.AppendLine(userBookRatingList[i].uid + delimeter + "9" + delimeter + nine + delimeter);
                 sb.AppendLine(userBookRatingList[i].uid + delimeter + "8" + delimeter + eight + delimeter);
                 sb.AppendLine(userBookRatingList[i].uid + delimeter + "7" + delimeter + seven + delimeter);
