@@ -4,9 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
+using System.IO;
 
 namespace CPSC571
 {
+
+    class Temp
+    {
+        public string isbn;
+        public string rating;
+
+        public Temp(string s, string r)
+        {
+            this.isbn = s;
+            this.rating = r;
+        }
+    }
+
     class Program
     {
 
@@ -20,11 +34,15 @@ namespace CPSC571
 
         static void Main(string[] args)
         {
+
+            string path = System.IO.Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName;
+
+
             SqlConnection myConnection = new SqlConnection("Server=localhost;Database=CPSC571;Integrated Security=true");
             //list of users
-            var list = new List<string>();
+            var userList = new List<string>();
             //list of users and there books
-            var list3 = new List<UserBook>();
+            var userBookRatingList = new List<UserBook>();
 
             // gets user id from ratings
             string queryString = "SELECT DISTINCT r.[User-Id] FROM dbo.Ratings as r";
@@ -33,70 +51,117 @@ namespace CPSC571
             myCommand.CommandText = queryString;
             myConnection.Open();
             myReader = myCommand.ExecuteReader();
-            Console.WriteLine("Retrieving all users");
-            bool first = true;
-            while (myReader.Read())
+            Console.WriteLine("Retrieving 1000 users");
+            int count = 0;
+            while (myReader.Read() && count < 1000)
             {
-                list.Add(myReader.GetString(0));
+                userList.Add(myReader.GetString(0));
+                count++;
             }
-            Console.WriteLine("All users retrieved");
+
+            Console.WriteLine("1000 users retrieved");
             myConnection.Close();
             myReader.Close();
             myReader = null;
             myCommand = null;
-            string uid = null;
+
             // gets a list of isbn for each user
-            Console.WriteLine("Retrieving user's books");
-            Console.WriteLine("0");
+            Console.WriteLine("Retrieving user's books (100)");
+
+            queryString = "SELECT DISTINCT r.ISBN FROM dbo.Ratings as r";
+            myCommand = myConnection.CreateCommand();
+            myCommand.CommandText = queryString;
+            myConnection.Open();
+            myReader = myCommand.ExecuteReader();
+            count = 0;
+            var bookList = new List<string>();
+            while (myReader.Read())
+            {
+                bookList.Add(myReader.GetString(0));
+                count++;
+            }
+
+            myConnection.Close();
+            myReader.Close();
+            myReader = null;
+            myCommand = null;
+
+            Console.WriteLine("Retrieved user's books (100)");
+            Console.WriteLine("Retrieving user ratings for those books");
+
+            string uid = null;
+            string bookISBN = null;
             double old_current = 0;
             double current = 0;
-            for (int i = 0; i < list.Count * 0.01; i++)
+            Console.WriteLine("0%");
+            for (int i = 0; i < userList.Count; i++)
             {
+                var temp = new List<Temp>();
+                var userBookList = new List<Books>();
 
-                current = (i / (list.Count * 0.01)) * 100;
+                current = ((double)i / userList.Count) * 100;
+
                 //Console.WriteLine(current);
+
                 if (old_current < current)
                 {
+
                     ClearLine();
                     Console.WriteLine("{0:N2}" + "%", current);
                     old_current = current;
                 }
-                uid = list[i];
-                //Console.WriteLine("Books for " + uid);
-                var list2 = new List<Books>();
-                string queryRatings = "SELECT b.ISBN, r.[Book-Rating] FROM dbo.Books as b, dbo.Ratings as r WHERE r.[User-ID] = @UID AND b.ISBN = r.ISBN";
+
+                uid = userList[i];
+
+                //Console.WriteLine("Book: " + bookISBN);
+                string queryRatings = "SELECT r.ISBN, r.[Book-Rating] FROM dbo.Ratings as r WHERE r.[User-ID] = @UID";
                 myCommand = myConnection.CreateCommand();
                 myCommand.CommandText = queryRatings;
+
                 SqlParameter p = new SqlParameter();
                 p.ParameterName = "@UID";
                 p.Value = uid;
                 myCommand.Parameters.Add(p);
                 myConnection.Open();
+
                 myReader = myCommand.ExecuteReader();
+
                 while (myReader.Read())
                 {
-                    char[] charsToTrim = { 'X', 'x' };
-                    long result;
-                    if (Int64.TryParse(myReader.GetString(0).TrimEnd(charsToTrim), out result))
-                    {
-                        Books temp = new Books(result, Int32.Parse(myReader.GetString(1)));
-                        list2.Add(temp);
-                    }
+                    temp.Add(new Temp(myReader.GetString(0), myReader.GetString(1)));
                 }
 
-                UserBook t = new UserBook(uid, list2);
-                list3.Add(t);
-
-                list2 = null;
                 myConnection.Close();
                 myReader.Close();
                 myCommand = null;
                 myReader = null;
                 myCommand = null;
 
+                for (int a = 0; a < temp.Count; a++)
+                {
+                    char[] charsToTrim = { 'X', 'x' };
+                    long result;
+
+                    for (int b = 0; b < bookList.Count; b++)
+                    {
+                        if (bookList[b] == temp[a].isbn)
+                        {
+                            if (Int64.TryParse(temp[a].isbn.TrimEnd(charsToTrim), out result))
+                            {
+                                Books gh = new Books(result, Int32.Parse(temp[a].rating));
+                                userBookList.Add(gh);
+                            }
+                        }
+                    }
+                }
+
+                UserBook t = new UserBook(uid, userBookList);
+                userBookRatingList.Add(t);
+
             }
             ClearLine();
-            Console.WriteLine("100" + "%", current);
+            Console.WriteLine("100%");
+
             Console.WriteLine("All user's books retrieved");
 
             Console.WriteLine("Building CF algorithm table");
@@ -105,7 +170,7 @@ namespace CPSC571
             //so.Test();
             //int count = 0;
             var list4 = new List<Dictionary<long, float>>();
-            foreach (var users in list3)
+            foreach (var users in userBookRatingList)
             {
                 UserBook ub = users;
                 Dictionary<long, float> userRating = new Dictionary<long, float>();
@@ -127,10 +192,26 @@ namespace CPSC571
 
             Console.WriteLine("CF algorithm table built");
 
+            string delimeter = ",";
+            StringBuilder sb = new StringBuilder();
+            string filePath = @"" + path + "\\result2.cvs";
+            sb.AppendLine("UID" + delimeter + "Rating#" + delimeter + "# of that Rating");
 
+            Console.WriteLine("Generating and Printing Results to file");
             for (int i = 0; i < list4.Count; i++)
             {
-
+                float zero = 0;
+                float one = 0;
+                float two = 0;
+                float three = 0;
+                float four = 0;
+                float five = 0;
+                float six = 0;
+                float seven = 0;
+                float eight = 0;
+                float nine = 0;
+                float ten = 0;
+                float nan = 0;
                 Dictionary<long, float> user = list4[i];
 
                 IDictionary<long, float> predictions = so.Predict(user);
@@ -139,34 +220,55 @@ namespace CPSC571
                             orderby pair.Value descending
                             select pair;
 
-                int count = 0;
-
-                Console.WriteLine("User: " + list3[i].uid);
                 foreach (var rating in items)
                 {
                     if (!float.IsNaN(rating.Value))
                     {
 
-                        Console.WriteLine(" Book: " + rating.Key + " Rating: " + rating.Value);
-
-                        count++;
-                        if (count > 10) break;
+                        if (rating.Value == 10)
+                            ten += 1;
+                        else if (rating.Value == 9)
+                            nine += 1;
+                        else if (rating.Value == 8)
+                            eight += 1;
+                        else if (rating.Value == 7)
+                            seven += 1;
+                        else if (rating.Value == 6)
+                            six += 1;
+                        else if (rating.Value == 5)
+                            five += 1;
+                        else if (rating.Value == 4)
+                            four += 1;
+                        else if (rating.Value == 3)
+                            three += 1;
+                        else if (rating.Value == 2)
+                            two += 1;
+                        else if (rating.Value == 1)
+                            one += 1;
+                        else if (rating.Value == 0)
+                            zero += 1;
                     }
-
-
-
+                    else
+                        nan += 1;
                 }
-
-                if (count == 0)
-                {
-                    Console.WriteLine("No books to recommend");
-                }
-
-                Console.WriteLine("#############################################################################");
-
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "10" + delimeter + ten + delimeter + user.Count);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "9" + delimeter + nine + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "8" + delimeter + eight + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "7" + delimeter + seven + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "6" + delimeter + six + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "5" + delimeter + five + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "4" + delimeter + four + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "3" + delimeter + three + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "2" + delimeter + two + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "1" + delimeter + one + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "0" + delimeter + zero + delimeter);
+                sb.AppendLine(userBookRatingList[i].uid + delimeter + "NaN" + delimeter + nan + delimeter);
             }
+            File.WriteAllText(filePath, sb.ToString());
+
             Console.WriteLine("Press any key to terminate program");
             Console.ReadKey();
+
         }
     }
 }
