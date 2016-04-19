@@ -126,11 +126,12 @@ namespace contentbased
         {
             suggestedBooks.RemoveRange(50, suggestedBooks.Count - 50);
         }
+
         // prints the top n suggestions
         public void printTopSuggestions(int n)
         {
             Console.WriteLine("USER#          : " + id);
-            Console.WriteLine("Suggested Books: " + suggestedBooks.Count());
+            Console.WriteLine("Similar Books  : " + suggestedBooks.Count());
             Console.WriteLine("Bought Books   : " + Authors.Count());
             for (int i = 0; i < n; i++)
             {
@@ -140,6 +141,17 @@ namespace contentbased
                     "\nSimilarity Rating: " + suggestedBooks.ElementAt(i).Value +
                     "\nISBN             : " + suggestedBooks.ElementAt(i).Key.ISBN);
             }
+        }
+
+        public void printToTextFile(int n)
+        {
+            System.IO.StreamWriter file = new System.IO.StreamWriter("results.csv", true);
+            for (int i = 0; i < n; i++)
+            {
+                file.Write(id + "|" + suggestedBooks.ElementAt(i).Key.Author + "|" + suggestedBooks.ElementAt(i).Key.Bookname + "|" + suggestedBooks.ElementAt(i).Value + "|" + suggestedBooks.Count() + "|" + Authors.Count());
+                file.Write("\n");
+            }
+            file.Close();
         }
     }
 }

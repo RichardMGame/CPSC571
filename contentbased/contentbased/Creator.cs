@@ -197,7 +197,7 @@ namespace contentbased
         // ratings can be adjusted.
         // As for now, author > year > publisher
         //      author is affected by book ratings by a factor (low and high extremities are bigger factors)
-        public void findUserBookMatches(SqlConnection connection, List<Book> bookList, int userID, int numSuggestions)
+        public void findUserBookMatches(SqlConnection connection, List<Book> bookList, int userID, int numSuggestions, double authorWeight, double yearWeight, double publisherWeight)
         {
             User user = profileUser(connection, userID);
             double bookScore = 0;
@@ -213,21 +213,21 @@ namespace contentbased
                     // ratings the user has given the author to the bookScore
                     if (s.Item1.ToLower().Equals(book.Author.ToLower()))
                     {
-                        bookScore += (5*s.Item2);
+                        bookScore += (authorWeight*s.Item2);
                     }
                 }
                 foreach (String s in user.Years)
                 {
                     if (s.Equals(book.Year))
                     {
-                        bookScore += 1;
+                        bookScore += yearWeight;
                     }
                 }
                 foreach (String s in user.Publishers) 
                 {
                     if (s.ToLower().Equals(book.Publisher.ToLower()))
                     {
-                        bookScore += 0.5;
+                        bookScore += publisherWeight;
                     }
                 }
                 // if the book is already owned, we rate it 0 as the user will not want it suggested to him.
@@ -247,6 +247,7 @@ namespace contentbased
                 bookScore = 0;
             }
             user.sortSuggestedBooks();
+            user.printToTextFile(numSuggestions);
             user.printTopSuggestions(numSuggestions);
         }
 
@@ -264,11 +265,11 @@ namespace contentbased
             }
             else if (rating == 2)
             {
-                ratingFactor = 0.3;
+                ratingFactor = 0.2;
             }
             else if (rating == 3)
             {
-                ratingFactor = 0.6;
+                ratingFactor = 0.4;
             }
             else if (rating == 4)
             {
