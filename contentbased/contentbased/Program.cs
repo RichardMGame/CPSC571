@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.IO;
+using System.Threading;
 
 namespace contentbased
 {
@@ -24,7 +25,6 @@ namespace contentbased
             double authorWeight = 5;
             double yearWeight = 1;
             double publisherWeight = 0.5;
-            String databaseName = "books";
 
 
             Console.WriteLine("####################################");
@@ -37,9 +37,18 @@ namespace contentbased
             Console.WriteLine("# Results are APPENDED             #");
             Console.WriteLine("####################################");
 
-            Console.Write("Please enter the name of your database containing books, users, and ratings: ");
-            databaseName = Console.ReadLine();
-            SqlConnection myConnection = new SqlConnection("Server=localhost;Database="+databaseName+";Integrated Security=true");
+            SqlConnection myConnection = new SqlConnection("Server=localhost;Database=books;Integrated Security=true");
+            try
+            {
+                myConnection.Open();
+            }
+            catch (SqlException e)
+            {
+                Console.WriteLine("Database could not be reached. Is it named books? The program will exit and need to be restarted.");
+                Thread.Sleep(5000);
+                Environment.Exit(1);
+            }
+            myConnection.Close();
 
             Console.WriteLine("Retrieving books and creating book profiles...");
             books = creator.createBookProfiles(myConnection);
